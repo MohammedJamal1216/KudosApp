@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(update-config)",
+      "mcp__figma__add_figma_file",
+      "mcp__figma__view_node",
+      "mcp__figma__read_comments",
+      "Bash(npm run:*)",
+      "Bash(npm install:*)"
+    ]
+  }
+}

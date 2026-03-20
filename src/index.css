@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: #F7F8FC;
+    color: #0F1729;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .text-gradient-name {
+    background: linear-gradient(90deg, #F5339A 0%, #AD47FF 50%, #6160FF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .badge-innovation {
+    background: #EEF0FF;
+    color: #4F38F6;
+  }
+
+  .badge-team-player {
+    background: #EEF9FF;
+    color: #0284C7;
+  }
+
+  .badge-leadership {
+    background: #FEE8F3;
+    color: #C026A1;
+  }
+
+  .nominee-card-border-1 {
+    background: linear-gradient(90deg, #F5339A, #AD47FF);
+  }
+  .nominee-card-border-2 {
+    background: linear-gradient(90deg, #3B82F6, #6160FF);
+  }
+  .nominee-card-border-3 {
+    background: linear-gradient(90deg, #F59E0B, #EF4444);
+  }
+  .nominee-card-border-4 {
+    background: linear-gradient(90deg, #10B981, #3B82F6);
+  }
+}
