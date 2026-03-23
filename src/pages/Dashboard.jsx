@@ -290,8 +290,6 @@ export default function Dashboard() {
                   ))}
                 </div>
               </>
-            ) : (
-              <div style={{ padding: "40px 0", textAlign: "center", color: "#90a3b8", fontWeight: 600 }}>No nominations yet.</div>
             )}
           </div>
 
