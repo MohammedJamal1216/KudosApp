@@ -140,7 +140,7 @@ export default function Dashboard() {
       </div>
 
       {/* BOTTOM GRID */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 404px", gap: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: nominations.length > 0 ? "1fr 404px" : "1fr", gap: 24 }}>
 
         {/* NOMINEES PANEL */}
         <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "24px 16px" }}>
@@ -163,10 +163,16 @@ export default function Dashboard() {
             {isLoadingEmployees ? (
               [1,2,3,4].map(i => <SkeletonCard key={i} />)
             ) : topNominees.length === 0 ? (
-              <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "48px 0", color: "#90a3b8" }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>🏅</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1d2940", marginBottom: 6 }}>No nominees yet</div>
-                <div style={{ fontSize: 14, fontWeight: 500 }}>Be the first to nominate a peer!</div>
+              <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "56px 0", color: "#90a3b8" }}>
+                <div style={{ fontSize: 56, marginBottom: 16 }}>🏅</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#1d2940", marginBottom: 8 }}>No nominees yet</div>
+                <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 24 }}>Be the first to recognise a teammate!</div>
+                <button
+                  onClick={() => navigate("/nominate")}
+                  style={{ background: "#4f38f5", color: "#fff", border: "none", borderRadius: 12, padding: "12px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(79,56,245,0.3)" }}
+                >
+                  + Nominate a Peer
+                </button>
               </div>
             ) : (
               topNominees.map(n => {
@@ -231,7 +237,7 @@ export default function Dashboard() {
         </div>
 
         {/* LEADERBOARD PANEL */}
-        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "24px 16px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        {nominations.length > 0 && <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "24px 16px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, padding: "0 4px" }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🏅</div>
@@ -306,7 +312,7 @@ export default function Dashboard() {
           >
             <span>🏆</span> View Leaderboard
           </button>
-        </div>
+        </div>}
       </div>
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
     </div>

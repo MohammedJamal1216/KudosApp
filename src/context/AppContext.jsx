@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { useMsal } from '@azure/msal-react'
 import { loginRequest } from '../auth/msalConfig'
 import { getGraphClient } from '../auth/graphClient'
-import { nominations as seedNominations, employees as seedEmployees } from '../data/employees'
+import { employees as seedEmployees } from '../data/employees'
 
 const GRADIENT_PALETTE = [
   'linear-gradient(135deg,#6160ff,#ad46ff)',
@@ -33,7 +33,7 @@ export function AppContextProvider({ children }) {
   const [employees, setEmployees] = useState([])
   const [isLoadingEmployees, setIsLoadingEmployees] = useState(true)
   const [graphError, setGraphError] = useState(null)
-  const [nominations, setNominations] = useState(seedNominations)
+  const [nominations, setNominations] = useState([])
   const [votedIds, setVotedIds] = useState(new Set())
 
   useEffect(() => {
