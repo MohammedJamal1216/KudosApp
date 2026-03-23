@@ -37,7 +37,30 @@ export function AppContextProvider({ children }) {
   const [votedIds, setVotedIds] = useState(new Set())
 
   useEffect(() => {
-    if (!accounts.length) return
+    if (!accounts.length) {
+      // Guest mode — use seed data
+      setCurrentUser({
+        id: 'guest',
+        name: 'Guest User',
+        role: 'Viewer',
+        department: 'Unknown',
+        initials: 'GU',
+        avatarBg: GRADIENT_PALETTE[0],
+        photoUrl: null,
+      })
+      const normalised = seedEmployees.map((u, idx) => ({
+        id: u.id,
+        name: u.name,
+        role: u.role || 'Employee',
+        department: u.department || 'Unknown',
+        initials: getInitials(u.name),
+        avatarBg: GRADIENT_PALETTE[idx % GRADIENT_PALETTE.length],
+        photoUrl: null,
+      }))
+      setEmployees(normalised)
+      setIsLoadingEmployees(false)
+      return
+    }
 
     async function loadData() {
       setIsLoadingEmployees(true)

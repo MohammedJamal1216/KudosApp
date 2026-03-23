@@ -13,3 +13,4 @@ export const msalConfig = {
 export const loginRequest = {
   scopes: ['User.Read', 'User.ReadBasic.All', 'User.Read.All'],
 }
+

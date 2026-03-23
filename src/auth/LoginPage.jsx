@@ -66,6 +66,7 @@ export default function LoginPage() {
           </svg>
           Sign in with Microsoft
         </button>
+
       </div>
     </div>
   )
