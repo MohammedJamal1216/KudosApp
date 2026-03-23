@@ -162,6 +162,12 @@ export default function Dashboard() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             {isLoadingEmployees ? (
               [1,2,3,4].map(i => <SkeletonCard key={i} />)
+            ) : topNominees.length === 0 ? (
+              <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "48px 0", color: "#90a3b8" }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>🏅</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1d2940", marginBottom: 6 }}>No nominees yet</div>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>Be the first to nominate a peer!</div>
+              </div>
             ) : (
               topNominees.map(n => {
                 const hasVoted = votedIds.has(n.id);
@@ -234,7 +240,13 @@ export default function Dashboard() {
 
             {isLoadingEmployees ? (
               <div style={{ padding: "40px 0", textAlign: "center", color: "#90a3b8", fontWeight: 600 }}>Loading…</div>
-            ) : leaderboard.length > 0 ? (
+            ) : leaderboard.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "48px 0", color: "#90a3b8" }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>🏆</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1d2940", marginBottom: 6 }}>No rankings yet</div>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>Nominations will appear here.</div>
+              </div>
+            ) : (
               <>
                 {/* Top winner */}
                 <div style={{ textAlign: "center", padding: "24px 0 16px", borderBottom: "1px solid #f1f5f9" }}>
