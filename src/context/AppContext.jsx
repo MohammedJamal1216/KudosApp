@@ -3,6 +3,8 @@ import { useMsal } from '@azure/msal-react'
 import { loginRequest } from '../auth/msalConfig'
 import { getGraphClient } from '../auth/graphClient'
 import { employees as seedEmployees } from '../data/employees'
+import { GOOGLE_USER_KEY } from '../auth/AuthWrapper'
+import { supabase } from '../lib/supabase'
 
 const GRADIENT_PALETTE = [
   'linear-gradient(135deg,#6160ff,#ad46ff)',
@@ -17,12 +19,59 @@ const GRADIENT_PALETTE = [
 ]
 
 function getInitials(name) {
-  return (name || '')
-    .split(' ')
-    .map(w => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  return (name || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+}
+
+const ADMIN_EMAIL_OVERRIDES = ['jamal@sharepointdesigns.com']
+
+const MANAGER_TITLE_KEYWORDS = [
+  'manager', 'lead', 'director', 'head', 'vp', 'vice president',
+  'chief', 'president', 'supervisor', 'coordinator',
+]
+
+function getAccessRole(email, jobTitle) {
+  if (ADMIN_EMAIL_OVERRIDES.includes((email || '').toLowerCase())) return 'admin'
+  const title = (jobTitle || '').toLowerCase()
+  return MANAGER_TITLE_KEYWORDS.some(k => title.includes(k)) ? 'manager' : 'employee'
+}
+
+// Map a Supabase nominations row → app nomination shape
+function mapRow(row, empMap) {
+  const nomineeFromDir = empMap[row.nominee_id]
+  const nominatorFromDir = empMap[row.nominator_id]
+  return {
+    id: row.id,
+    nominee: {
+      id: row.nominee_id,
+      name: row.nominee_name || '',
+      role: nomineeFromDir?.role || row.nominee_role || '',
+      initials: row.nominee_initials || '',
+      avatarBg: row.nominee_avatar_bg || GRADIENT_PALETTE[0],
+      photoUrl: nomineeFromDir?.photoUrl || null,
+    },
+    nominatedBy: {
+      id: row.nominator_id,
+      name: row.nominator_name || '',
+      initials: row.nominator_initials || '',
+      avatarBg: nominatorFromDir?.avatarBg || GRADIENT_PALETTE[0],
+      photoUrl: nominatorFromDir?.photoUrl || null,
+    },
+    category: row.category || '',
+    message: row.message || '',
+    votes: row.vote_count || 0,
+    createdAt: row.created_at || null,
+  }
+}
+
+async function loadSupabaseData(userId, empMap) {
+  const [{ data: nomRows }, { data: voteRows }] = await Promise.all([
+    supabase.from('nominations').select('*').order('created_at', { ascending: false }),
+    supabase.from('votes').select('nomination_id').eq('voter_id', userId),
+  ])
+
+  const nominations = (nomRows || []).map(row => mapRow(row, empMap))
+  const votedIds = new Set((voteRows || []).map(v => v.nomination_id))
+  return { nominations, votedIds }
 }
 
 const AppContext = createContext(null)
@@ -35,33 +84,47 @@ export function AppContextProvider({ children }) {
   const [graphError, setGraphError] = useState(null)
   const [nominations, setNominations] = useState([])
   const [votedIds, setVotedIds] = useState(new Set())
+  const [dbError, setDbError] = useState(null)
 
   useEffect(() => {
+    // ── Google login path ──
     if (!accounts.length) {
-      // Guest mode — use seed data
-      setCurrentUser({
-        id: 'guest',
-        name: 'Guest User',
-        role: 'Viewer',
-        department: 'Unknown',
-        initials: 'GU',
-        avatarBg: GRADIENT_PALETTE[0],
-        photoUrl: null,
-      })
-      const normalised = seedEmployees.map((u, idx) => ({
-        id: u.id,
-        name: u.name,
-        role: u.role || 'Employee',
-        department: u.department || 'Unknown',
-        initials: getInitials(u.name),
-        avatarBg: GRADIENT_PALETTE[idx % GRADIENT_PALETTE.length],
-        photoUrl: null,
-      }))
-      setEmployees(normalised)
-      setIsLoadingEmployees(false)
+      try {
+        const googleUser = JSON.parse(sessionStorage.getItem(GOOGLE_USER_KEY) || 'null')
+        if (googleUser) {
+          const user = {
+            id: googleUser.id,
+            name: googleUser.name,
+            role: '',
+            department: '',
+            email: googleUser.email,
+            accessRole: getAccessRole(googleUser.email, ''),
+            initials: getInitials(googleUser.name),
+            avatarBg: GRADIENT_PALETTE[0],
+            photoUrl: googleUser.picture || null,
+            provider: 'google',
+          }
+          setCurrentUser(user)
+
+          const empList = seedEmployees.map((u, idx) => ({
+            id: u.id, name: u.name, role: u.role || '', department: u.department || '',
+            initials: getInitials(u.name), avatarBg: GRADIENT_PALETTE[idx % GRADIENT_PALETTE.length], photoUrl: null,
+          }))
+          setEmployees(empList)
+
+          const empMap = Object.fromEntries(empList.map(e => [e.id, e]))
+          loadSupabaseData(user.id, empMap).then(({ nominations, votedIds }) => {
+            setNominations(nominations)
+            setVotedIds(votedIds)
+          }).catch(console.error)
+
+          setIsLoadingEmployees(false)
+        }
+      } catch { /* ignore */ }
       return
     }
 
+    // ── Microsoft login path ──
     async function loadData() {
       setIsLoadingEmployees(true)
       setGraphError(null)
@@ -71,70 +134,77 @@ export function AppContextProvider({ children }) {
           ...loginRequest,
           account: accounts[0],
         })
-        const token = tokenResponse.accessToken
-        const client = getGraphClient(token)
+        const client = getGraphClient(tokenResponse.accessToken)
 
-        // Load current user — User.Read only (no admin consent needed)
-        const meResult = await client.api('/me').select('id,displayName,jobTitle,department').get()
+        // Load current user
+        const meResult = await client.api('/me')
+          .select('id,displayName,jobTitle,department,userPrincipalName,mail')
+          .get()
 
         let photoUrl = null
         try {
           const photoBlob = await client.api('/me/photo/$value').get()
           photoUrl = URL.createObjectURL(photoBlob)
-        } catch {
-          // no photo — use initials
-        }
+        } catch { /* no photo */ }
 
-        const me = {
+        const email = meResult.mail || meResult.userPrincipalName || ''
+        const user = {
           id: meResult.id,
           name: meResult.displayName || 'You',
-          role: meResult.jobTitle || 'Employee',
-          department: meResult.department || 'Unknown',
+          role: meResult.jobTitle || '',
+          department: meResult.department || '',
+          email,
+          accessRole: getAccessRole(email, meResult.jobTitle),
           initials: getInitials(meResult.displayName || 'You'),
           avatarBg: GRADIENT_PALETTE[0],
           photoUrl,
         }
-        setCurrentUser(me)
+        setCurrentUser(user)
 
-        // Try to load full directory — requires admin consent.
-        // If it fails, fall back to seed employee data silently.
+        // Load employees
+        let empList = []
         try {
-          const usersResult = await client.api('/users').select('id,displayName,jobTitle,department').top(50).get()
-          const userList = usersResult.value || []
+          let userList = []
+          let response = await client
+            .api('/users')
+            .select('id,displayName,jobTitle,department')
+            .filter("accountEnabled eq true and userType eq 'Member'")
+            .top(999)
+            .get()
+          userList = [...(response.value || [])]
+          while (response['@odata.nextLink']) {
+            response = await client.api(response['@odata.nextLink']).get()
+            userList = [...userList, ...(response.value || [])]
+          }
 
           const photoResults = await Promise.allSettled(
             userList.map(u => client.api(`/users/${u.id}/photo/$value`).get())
           )
-
-          const normalised = userList.map((u, idx) => {
+          empList = userList.map((u, idx) => {
             let uPhotoUrl = null
             if (photoResults[idx].status === 'fulfilled') {
               try { uPhotoUrl = URL.createObjectURL(photoResults[idx].value) } catch { /* ignore */ }
             }
             return {
-              id: u.id,
-              name: u.displayName || 'Unknown',
-              role: u.jobTitle || 'Employee',
-              department: u.department || 'Unknown',
-              initials: getInitials(u.displayName || '?'),
-              avatarBg: GRADIENT_PALETTE[idx % GRADIENT_PALETTE.length],
-              photoUrl: uPhotoUrl,
+              id: u.id, name: u.displayName || '', role: u.jobTitle || '',
+              department: u.department || '', initials: getInitials(u.displayName || '?'),
+              avatarBg: GRADIENT_PALETTE[idx % GRADIENT_PALETTE.length], photoUrl: uPhotoUrl,
             }
           })
-          setEmployees(normalised)
         } catch {
-          // No admin consent — use seed data, normalised to the same shape
-          const normalised = seedEmployees.map((u, idx) => ({
-            id: u.id,
-            name: u.name,
-            role: u.role || 'Employee',
-            department: u.department || 'Unknown',
-            initials: getInitials(u.name),
-            avatarBg: GRADIENT_PALETTE[idx % GRADIENT_PALETTE.length],
-            photoUrl: null,
+          empList = seedEmployees.map((u, idx) => ({
+            id: u.id, name: u.name, role: u.role || '', department: u.department || '',
+            initials: getInitials(u.name), avatarBg: GRADIENT_PALETTE[idx % GRADIENT_PALETTE.length], photoUrl: null,
           }))
-          setEmployees(normalised)
         }
+        setEmployees(empList)
+
+        // Load nominations + votes from Supabase
+        const empMap = Object.fromEntries(empList.map(e => [e.id, e]))
+        const { nominations, votedIds } = await loadSupabaseData(user.id, empMap)
+        setNominations(nominations)
+        setVotedIds(votedIds)
+
       } catch (err) {
         console.error('Graph API error:', err)
         setGraphError(err.message || 'Failed to load data from Microsoft Graph.')
@@ -146,37 +216,72 @@ export function AppContextProvider({ children }) {
     loadData()
   }, [accounts, instance])
 
-  function addNomination(nomineeId, catId, message) {
+  async function addNomination(nomineeId, catId, message) {
     const nominee = employees.find(e => e.id === nomineeId)
-    if (!nominee || !currentUser) return
-    setNominations(prev => [...prev, {
-      id: Date.now(),
+    if (!nominee || !currentUser) return false
+
+    setDbError(null)
+    const { data, error } = await supabase.from('nominations').insert({
+      nominee_id: nominee.id,
+      nominee_name: nominee.name,
+      nominee_initials: nominee.initials,
+      nominee_avatar_bg: nominee.avatarBg || '',
+      nominee_role: nominee.role || '',
+      nominator_id: currentUser.id,
+      nominator_name: currentUser.name,
+      nominator_initials: currentUser.initials,
+      category: catId,
+      message,
+      vote_count: 0,
+    }).select().single()
+
+    if (error) {
+      console.error('Failed to save nomination:', error)
+      setDbError(error.message || 'Failed to save nomination. Please try again.')
+      return false
+    }
+
+    setNominations(prev => [{
+      id: data.id,
       nominee,
       nominatedBy: currentUser,
       category: catId,
       message,
       votes: 0,
-    }])
+      createdAt: data.created_at,
+    }, ...prev])
+    return true
   }
 
-  function castVote(nominationId) {
+  async function castVote(nominationId) {
+    if (!currentUser) return
     if (votedIds.has(nominationId)) return
+    const nomination = nominations.find(n => n.id === nominationId)
+    if (!nomination) return
+
+    const newVoteCount = nomination.votes + 1
+
+    // Optimistic update
     setVotedIds(prev => new Set([...prev, nominationId]))
-    setNominations(prev =>
-      prev.map(n => n.id === nominationId ? { ...n, votes: n.votes + 1 } : n)
-    )
+    setNominations(prev => prev.map(n => n.id === nominationId ? { ...n, votes: newVoteCount } : n))
+
+    const [voteResult, updateResult] = await Promise.all([
+      supabase.from('votes').insert({ nomination_id: nominationId, voter_id: currentUser.id }),
+      supabase.from('nominations').update({ vote_count: newVoteCount }).eq('id', nominationId),
+    ])
+
+    if (voteResult.error || updateResult.error) {
+      console.error('Failed to save vote:', voteResult.error || updateResult.error)
+      // Revert
+      setVotedIds(prev => { const s = new Set(prev); s.delete(nominationId); return s })
+      setNominations(prev => prev.map(n => n.id === nominationId ? { ...n, votes: nomination.votes } : n))
+    }
   }
 
   return (
     <AppContext.Provider value={{
-      currentUser,
-      employees,
-      isLoadingEmployees,
-      graphError,
-      nominations,
-      votedIds,
-      addNomination,
-      castVote,
+      currentUser, employees, isLoadingEmployees, graphError,
+      nominations, votedIds, addNomination, castVote, dbError,
     }}>
       {children}
     </AppContext.Provider>

@@ -1,10 +1,20 @@
 import { useIsAuthenticated, useMsal } from '@azure/msal-react'
 import { InteractionStatus } from '@azure/msal-browser'
+import { useState } from 'react'
 import LoginPage from './LoginPage'
+
+export const GOOGLE_USER_KEY = 'kudos_google_user'
 
 export default function AuthWrapper({ children }) {
   const { inProgress } = useMsal()
-  const isAuthenticated = useIsAuthenticated()
+  const isMsalAuthenticated = useIsAuthenticated()
+
+  const [googleUser, setGoogleUser] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem(GOOGLE_USER_KEY) || 'null') }
+    catch { return null }
+  })
+
+  const isAuthenticated = isMsalAuthenticated || googleUser !== null
 
   if (inProgress === InteractionStatus.Startup || inProgress === InteractionStatus.HandleRedirect) {
     return (
@@ -28,7 +38,14 @@ export default function AuthWrapper({ children }) {
   }
 
   if (!isAuthenticated) {
-    return <LoginPage />
+    return (
+      <LoginPage
+        onGoogleLogin={user => {
+          sessionStorage.setItem(GOOGLE_USER_KEY, JSON.stringify(user))
+          setGoogleUser(user)
+        }}
+      />
+    )
   }
 
   return children

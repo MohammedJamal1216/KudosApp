@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Avatar from "../components/Avatar";
 import { useAppContext } from "../context/AppContext";
+import { useConfig } from "../context/ConfigContext";
 
 const categories = [
   { id: "team",        emoji: "🤝", label: "Team Player",          desc: "Collaborates and supports the team" },
@@ -22,7 +23,8 @@ function SkeletonPeerCard() {
 }
 
 export default function NominatePeer() {
-  const { employees, currentUser, addNomination, isLoadingEmployees, graphError } = useAppContext();
+  const { employees, currentUser, nominations, addNomination, isLoadingEmployees, graphError, dbError } = useAppContext();
+  const { config } = useConfig();
 
   const peers = employees.filter(e => e.id !== currentUser?.id);
 
@@ -31,6 +33,7 @@ export default function NominatePeer() {
   const [reason, setReason]             = useState("");
   const [search, setSearch]             = useState("");
   const [submitted, setSubmitted]       = useState(false);
+  const [submitting, setSubmitting]     = useState(false);
 
   // Reset selection when peers load for the first time
   const filtered = peers.filter(p =>
@@ -38,10 +41,23 @@ export default function NominatePeer() {
     p.department.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleSubmit = () => {
-    if (!selectedPeer || !selectedCat || !reason.trim()) return;
-    addNomination(selectedPeer, selectedCat, reason);
-    setSubmitted(true);
+  const cooldownBlock = (() => {
+    if (!selectedPeer || !config.blockRepeatNominations) return null
+    const peerNoms = nominations
+      .filter(n => n.nominee?.id === selectedPeer && n.createdAt)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    if (!peerNoms.length) return null
+    const lastDate = new Date(peerNoms[0].createdAt)
+    const cooldownEnd = new Date(lastDate.getTime() + config.nominationCooldownDays * 24 * 60 * 60 * 1000)
+    return new Date() < cooldownEnd ? { lastDate, cooldownEnd } : null
+  })()
+
+  const handleSubmit = async () => {
+    if (!selectedPeer || !selectedCat || !reason.trim() || cooldownBlock || submitting) return;
+    setSubmitting(true);
+    const ok = await addNomination(selectedPeer, selectedCat, reason);
+    setSubmitting(false);
+    if (ok) setSubmitted(true);
   };
 
   if (submitted) {
@@ -68,6 +84,18 @@ export default function NominatePeer() {
 
   return (
     <div style={{ fontFamily: "'Inter','Segoe UI',sans-serif", color: "#1d2940" }}>
+
+      {/* Supabase error banner */}
+      {dbError && (
+        <div style={{
+          background: "#fff1f2", border: "1px solid #fecdd3", borderRadius: 14,
+          padding: "14px 20px", marginBottom: 20, display: "flex", alignItems: "center",
+          gap: 12, fontSize: 14, fontWeight: 600, color: "#e11d48",
+        }}>
+          <span>⚠️</span>
+          <span>Could not save nomination: {dbError}</span>
+        </div>
+      )}
 
       {/* Error banner */}
       {graphError && (
@@ -244,7 +272,7 @@ export default function NominatePeer() {
         <div>
           <button
             onClick={handleSubmit}
-            disabled={!selectedPeer || !selectedCat || !reason.trim()}
+            disabled={!selectedPeer || !selectedCat || !reason.trim() || !!cooldownBlock || submitting}
             style={{
               background: (!selectedPeer || !selectedCat || !reason.trim()) ? "#e2e8f0" : "#1d2940",
               color: (!selectedPeer || !selectedCat || !reason.trim()) ? "#90a3b8" : "#fff",
@@ -258,21 +286,36 @@ export default function NominatePeer() {
             onMouseEnter={e => { if (selectedPeer && selectedCat && reason.trim()) { e.currentTarget.style.background = "#4f38f5"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(79,56,245,0.35)"; }}}
             onMouseLeave={e => { if (selectedPeer && selectedCat && reason.trim()) { e.currentTarget.style.background = "#1d2940"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(29,41,64,0.25)"; }}}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Submit Nomination
+            {submitting ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeDasharray="31.4" strokeDashoffset="10"/>
+              </svg>
+            ) : (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+            {submitting ? 'Saving...' : 'Submit Nomination'}
           </button>
 
-          {selectedPeer && selectedCat && (
+          {cooldownBlock ? (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginLeft: 20, background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 12, padding: "10px 16px", fontSize: 13, fontWeight: 600, color: "#c2410c" }}>
+              <span>⏳</span>
+              <span>
+                <strong>{peers.find(p => p.id === selectedPeer)?.name || 'This person'}</strong> was nominated on{" "}
+                <strong>{cooldownBlock.lastDate.toLocaleDateString()}</strong>. Can nominate again after{" "}
+                <strong>{cooldownBlock.cooldownEnd.toLocaleDateString()}</strong>.
+              </span>
+            </div>
+          ) : selectedPeer && selectedCat ? (
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginLeft: 20, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 999, padding: "8px 16px", fontSize: 13, fontWeight: 600, color: "#16a34a" }}>
               <span>✓</span>
               Nominating <strong>{peers.find(p => p.id === selectedPeer)?.name}</strong> for <strong>{categories.find(c => c.id === selectedCat)?.label}</strong>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
-      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

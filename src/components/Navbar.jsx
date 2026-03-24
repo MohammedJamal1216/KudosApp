@@ -2,11 +2,14 @@ import { useState, useRef, useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useMsal } from '@azure/msal-react'
 import { useAppContext } from '../context/AppContext'
+import AdminConfigPanel from './AdminConfigPanel'
+import { GOOGLE_USER_KEY } from '../auth/AuthWrapper'
 
-const navItems = [
+const allNavItems = [
   {
     to: '/dashboard',
     label: 'Dashboard',
+    roles: ['admin', 'manager', 'employee'],
     icon: (
       <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -19,6 +22,7 @@ const navItems = [
   {
     to: '/nominate',
     label: 'Nominate',
+    roles: ['admin', 'manager'],
     icon: (
       <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -31,6 +35,7 @@ const navItems = [
   {
     to: '/vote',
     label: 'Vote',
+    roles: ['admin', 'employee'],
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/>
@@ -41,6 +46,7 @@ const navItems = [
   {
     to: '/leaderboard',
     label: 'Leaderboard',
+    roles: ['admin', 'manager', 'employee'],
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
@@ -58,10 +64,17 @@ export default function Navbar() {
   const { instance } = useMsal()
   const { currentUser } = useAppContext()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [configOpen, setConfigOpen] = useState(false)
   const dropdownRef = useRef(null)
+  const navItems = allNavItems.filter(item => item.roles.includes(currentUser?.accessRole ?? 'employee'))
 
   const handleSignOut = () => {
-    instance.logoutPopup().catch(console.error)
+    if (currentUser?.provider === 'google') {
+      sessionStorage.removeItem(GOOGLE_USER_KEY)
+      window.location.reload()
+    } else {
+      instance.logoutPopup().catch(console.error)
+    }
   }
 
   // Close dropdown when clicking outside
@@ -76,6 +89,7 @@ export default function Navbar() {
   }, [])
 
   return (
+    <>
     <nav
       className="w-full bg-white sticky top-0 z-50 flex items-center justify-between"
       style={{
@@ -164,8 +178,29 @@ export default function Navbar() {
         ))}
       </div>
 
+      {/* Gear + Profile */}
+      <div className="flex items-center gap-3 flex-shrink-0">
+
+      {/* Gear icon — admin only */}
+      {currentUser?.accessRole === 'admin' && (
+        <button onClick={() => setConfigOpen(true)} title="Admin Config" style={{
+          background: 'none', border: '1.5px solid #e2e8f0', borderRadius: 12,
+          width: 40, height: 40, cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', color: '#627490',
+          transition: 'all 0.15s ease', flexShrink: 0,
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#eceaff'; e.currentTarget.style.borderColor = '#c4b5fd'; e.currentTarget.style.color = '#4f38f5' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#627490' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      )}
+
       {/* User Profile */}
-      <div className="flex-shrink-0 relative" ref={dropdownRef}>
+      <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setDropdownOpen(prev => !prev)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
@@ -176,7 +211,7 @@ export default function Navbar() {
                 {currentUser?.name || '…'}
               </p>
               <p className="text-[12px] font-semibold leading-4" style={{ color: '#F5339A' }}>
-                {currentUser?.role || '…'}
+                {currentUser?.accessRole === 'admin' ? 'Admin' : currentUser?.role || '…'}
               </p>
             </div>
             {/* Avatar */}
@@ -226,6 +261,10 @@ export default function Navbar() {
           </div>
         )}
       </div>
+      </div>
     </nav>
+
+    {configOpen && <AdminConfigPanel onClose={() => setConfigOpen(false)} />}
+    </>
   )
 }

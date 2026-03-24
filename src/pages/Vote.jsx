@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAppContext } from "../context/AppContext";
+import { useConfig } from "../context/ConfigContext";
 
 function CategoryPill({ label }) {
   return (
@@ -31,11 +32,17 @@ function AvatarCircle({ photoUrl, name, initials, avatarBg, size = 64 }) {
 
 export default function Vote() {
   const { nominations, currentUser, votedIds, castVote, isLoadingEmployees, graphError } = useAppContext();
+  const { config } = useConfig();
   const [search, setSearch] = useState("");
   const MAX_VOTES = 3;
   const remaining = MAX_VOTES - votedIds.size;
 
-  const candidates = nominations.filter(n => n.nominee?.id !== currentUser?.id);
+  const isManager = currentUser?.accessRole === 'manager' || currentUser?.accessRole === 'admin'
+  const candidates = nominations.filter(n => {
+    if (!isManager && !config.employeesCanSelfVote && n.nominee?.id === currentUser?.id) return false
+    if (isManager && n.nominatedBy?.id === currentUser?.id) return false
+    return true
+  });
 
   const filtered = candidates.filter(c =>
     (c.nominee?.name || "").toLowerCase().includes(search.toLowerCase()) ||
