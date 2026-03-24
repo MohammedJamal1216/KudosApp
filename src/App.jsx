@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Dashboard from './pages/Dashboard'
 import NominatePeer from './pages/NominatePeer'
@@ -14,7 +14,7 @@ export default function App() {
     <AuthWrapper>
       <ConfigContextProvider>
         <AppContextProvider>
-          <BrowserRouter>
+          <HashRouter>
             <div className="min-h-screen bg-[#F7F8FC] overflow-x-hidden">
               <Navbar />
               <main className="max-w-[1260px] mx-auto px-[90px] py-8">
@@ -30,7 +30,7 @@ export default function App() {
                 SharePoint Designs © 2026 All Rights Reserved.
               </footer>
             </div>
-          </BrowserRouter>
+          </HashRouter>
         </AppContextProvider>
       </ConfigContextProvider>
     </AuthWrapper>
