@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useNotifications } from '../context/NotificationContext'
 
 function timeAgo(dateStr) {
@@ -11,6 +12,18 @@ function timeAgo(dateStr) {
   return `${Math.floor(hrs / 24)}d ago`
 }
 
+function getRoute(n) {
+  switch (n.type) {
+    case 'nominated':
+    case 'vote_received':
+      return n.nomination_id ? `/dashboard?highlight=${n.nomination_id}` : '/dashboard'
+    case 'new_nomination':
+      return n.nomination_id ? `/vote?highlight=${n.nomination_id}` : '/vote'
+    default:
+      return '/dashboard'
+  }
+}
+
 const TYPE_ICON = { nominated: '🏅', vote_received: '👍', new_nomination: '🔔' }
 const TYPE_BG = {
   nominated: 'linear-gradient(135deg,#6160ff,#ad46ff)',
@@ -20,6 +33,7 @@ const TYPE_BG = {
 
 export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -30,6 +44,12 @@ export default function NotificationBell() {
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
+
+  function handleNotificationClick(n) {
+    markAsRead(n.id)
+    setOpen(false)
+    navigate(getRoute(n))
+  }
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
@@ -118,15 +138,15 @@ export default function NotificationBell() {
               notifications.map(n => (
                 <div
                   key={n.id}
-                  onClick={() => markAsRead(n.id)}
+                  onClick={() => handleNotificationClick(n)}
                   style={{
                     padding: '14px 20px', borderBottom: '1px solid #f8fafc',
                     background: n.isRead ? '#fff' : '#f5f3ff',
-                    cursor: 'pointer', transition: 'background 0.15s',
+                    cursor: 'pointer', transition: 'all 0.15s ease',
                     display: 'flex', gap: 12, alignItems: 'flex-start',
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                  onMouseLeave={e => { e.currentTarget.style.background = n.isRead ? '#fff' : '#f5f3ff' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#eceaff'; e.currentTarget.style.paddingLeft = '24px' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = n.isRead ? '#fff' : '#f5f3ff'; e.currentTarget.style.paddingLeft = '20px' }}
                 >
                   {/* Type icon */}
                   <div style={{
@@ -145,9 +165,14 @@ export default function NotificationBell() {
                     }}>
                       {n.message}
                     </p>
-                    <p style={{ fontSize: 11, color: '#90a3b8', fontWeight: 600, margin: '4px 0 0' }}>
-                      {timeAgo(n.created_at)}
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                      <p style={{ fontSize: 11, color: '#90a3b8', fontWeight: 600, margin: 0 }}>
+                        {timeAgo(n.created_at)}
+                      </p>
+                      <span style={{ fontSize: 11, color: '#4f38f5', fontWeight: 600 }}>
+                        {n.type === 'new_nomination' ? 'Vote now →' : 'View →'}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Unread dot */}

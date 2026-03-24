@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
 import Avatar from "../components/Avatar";
 import { useAppContext } from "../context/AppContext";
 
@@ -20,7 +21,23 @@ function SkeletonCard() {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser, employees, nominations, votedIds, castVote, isLoadingEmployees, graphError } = useAppContext();
+
+  useEffect(() => {
+    const highlightId = searchParams.get('highlight');
+    if (!highlightId || isLoadingEmployees) return;
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`nomination-${highlightId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.animation = 'notif-highlight 0.8s ease-in-out 3';
+        setTimeout(() => { el.style.animation = ''; }, 2500);
+      }
+      setSearchParams({}, { replace: true });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchParams, isLoadingEmployees]);
 
   const firstName = currentUser?.name?.split(" ")[0] || "there";
 
@@ -178,7 +195,7 @@ export default function Dashboard() {
               topNominees.map(n => {
                 const hasVoted = votedIds.has(n.id);
                 return (
-                  <div key={n.id}
+                  <div key={n.id} id={`nomination-${n.id}`}
                     style={{
                       background: "#fff", border: "1px solid #f1f5f9", borderRadius: 24,
                       overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.1)",
@@ -314,7 +331,7 @@ export default function Dashboard() {
           </button>
         </div>}
       </div>
-      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} } @keyframes notif-highlight { 0%,100% { box-shadow: 0 1px 2px rgba(0,0,0,0.1); } 50% { box-shadow: 0 0 0 4px rgba(79,56,245,0.35), 0 8px 24px rgba(79,56,245,0.18); } }`}</style>
     </div>
   );
 }

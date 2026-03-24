@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { useConfig } from "../context/ConfigContext";
 
@@ -34,6 +35,22 @@ export default function Vote() {
   const { nominations, currentUser, votedIds, castVote, isLoadingEmployees, graphError } = useAppContext();
   const { config } = useConfig();
   const [search, setSearch] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    const highlightId = searchParams.get('highlight');
+    if (!highlightId || isLoadingEmployees) return;
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`nomination-${highlightId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.animation = 'notif-highlight 0.8s ease-in-out 3';
+        setTimeout(() => { el.style.animation = ''; }, 2500);
+      }
+      setSearchParams({}, { replace: true });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchParams, isLoadingEmployees]);
   const MAX_VOTES = 3;
   const remaining = MAX_VOTES - votedIds.size;
 
@@ -175,7 +192,7 @@ export default function Vote() {
               const hasVoted = votedIds.has(c.id);
               const canVote  = !hasVoted && remaining > 0;
               return (
-                <div key={c.id} style={{
+                <div key={c.id} id={`nomination-${c.id}`} style={{
                   background: "#fff", border: `1.5px solid ${hasVoted ? "#c4b5fd" : "#f1f5f9"}`,
                   borderRadius: 24, overflow: "hidden",
                   boxShadow: hasVoted ? "0 4px 16px rgba(79,56,245,0.12)" : "0 1px 3px rgba(0,0,0,0.1)",
@@ -264,7 +281,7 @@ export default function Vote() {
           </div>
         )}
       </div>
-      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} } @keyframes notif-highlight { 0%,100% { box-shadow: 0 1px 3px rgba(0,0,0,0.1); } 50% { box-shadow: 0 0 0 4px rgba(79,56,245,0.35), 0 8px 24px rgba(79,56,245,0.18); } }`}</style>
     </div>
   );
 }
