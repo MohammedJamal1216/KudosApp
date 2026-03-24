@@ -24,6 +24,12 @@ function getInitials(name) {
 
 const ADMIN_EMAIL_OVERRIDES = ['jamal@sharepointdesigns.com', 'anish@sharepointdesigns.com']
 
+const CATEGORY_LABELS = {
+  team: 'Team Player', innovation: 'Innovation', leadership: 'Leadership',
+  helping: 'Helping Others', beyond: 'Above & Beyond',
+  rising: 'Rising Star', performance: 'Performance Champion',
+}
+
 const MANAGER_TITLE_KEYWORDS = [
   'manager', 'lead', 'director', 'head', 'vp', 'vice president',
   'chief', 'president', 'supervisor', 'coordinator',
@@ -241,6 +247,22 @@ export function AppContextProvider({ children }) {
       return false
     }
 
+    const catLabel = CATEGORY_LABELS[catId] || catId
+    supabase.from('notifications').insert([
+      {
+        user_id: nomineeId,
+        message: `You have been nominated for ${catLabel} by ${currentUser.name}!`,
+        type: 'nominated',
+        nomination_id: data.id,
+      },
+      {
+        user_id: 'broadcast',
+        message: `${nominee.name} has been nominated for ${catLabel}! Go vote now.`,
+        type: 'new_nomination',
+        nomination_id: data.id,
+      },
+    ]).then(({ error: nErr }) => { if (nErr) console.error('Notification insert error:', nErr) })
+
     setNominations(prev => [{
       id: data.id,
       nominee,
@@ -275,6 +297,14 @@ export function AppContextProvider({ children }) {
       // Revert
       setVotedIds(prev => { const s = new Set(prev); s.delete(nominationId); return s })
       setNominations(prev => prev.map(n => n.id === nominationId ? { ...n, votes: nomination.votes } : n))
+    } else {
+      const catLabel = CATEGORY_LABELS[nomination.category] || nomination.category
+      supabase.from('notifications').insert({
+        user_id: nomination.nominee.id,
+        message: `Someone voted for your ${catLabel} nomination! You now have ${newVoteCount} vote${newVoteCount === 1 ? '' : 's'}.`,
+        type: 'vote_received',
+        nomination_id: nominationId,
+      }).then(({ error: nErr }) => { if (nErr) console.error('Notification insert error:', nErr) })
     }
   }
 

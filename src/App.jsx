@@ -8,12 +8,14 @@ import AuthWrapper from './auth/AuthWrapper'
 import RoleGuard from './components/RoleGuard'
 import { AppContextProvider } from './context/AppContext'
 import { ConfigContextProvider } from './context/ConfigContext'
+import { NotificationProvider } from './context/NotificationContext'
 
 export default function App() {
   return (
     <AuthWrapper>
       <ConfigContextProvider>
         <AppContextProvider>
+          <NotificationProvider>
           <HashRouter>
             <div className="min-h-screen bg-[#F7F8FC] overflow-x-hidden">
               <Navbar />
@@ -31,6 +33,7 @@ export default function App() {
               </footer>
             </div>
           </HashRouter>
+          </NotificationProvider>
         </AppContextProvider>
       </ConfigContextProvider>
     </AuthWrapper>

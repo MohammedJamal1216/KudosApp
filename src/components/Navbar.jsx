@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { useMsal } from '@azure/msal-react'
 import { useAppContext } from '../context/AppContext'
 import AdminConfigPanel from './AdminConfigPanel'
+import NotificationBell from './NotificationBell'
 import { GOOGLE_USER_KEY } from '../auth/AuthWrapper'
 
 const allNavItems = [
@@ -180,6 +181,9 @@ export default function Navbar() {
 
       {/* Gear + Profile */}
       <div className="flex items-center gap-3 flex-shrink-0">
+
+      {/* Bell icon — all users */}
+      <NotificationBell />
 
       {/* Gear icon — admin only */}
       {currentUser?.accessRole === 'admin' && (
