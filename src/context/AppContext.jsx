@@ -173,7 +173,7 @@ export function AppContextProvider({ children }) {
           let userList = []
           let response = await client
             .api('/users')
-            .select('id,displayName,jobTitle,department')
+            .select('id,displayName,jobTitle,department,mail,userPrincipalName')
             .filter("accountEnabled eq true and userType eq 'Member'")
             .top(999)
             .get()
@@ -193,7 +193,8 @@ export function AppContextProvider({ children }) {
             }
             return {
               id: u.id, name: u.displayName || '', role: u.jobTitle || '',
-              department: u.department || '', initials: getInitials(u.displayName || '?'),
+              department: u.department || '', email: u.mail || u.userPrincipalName || '',
+              initials: getInitials(u.displayName || '?'),
               avatarBg: GRADIENT_PALETTE[idx % GRADIENT_PALETTE.length], photoUrl: uPhotoUrl,
             }
           })
@@ -251,6 +252,7 @@ export function AppContextProvider({ children }) {
     supabase.from('notifications').insert([
       {
         user_id: nomineeId,
+        recipient_email: nominee.email || null,
         message: `You have been nominated for ${catLabel} by ${currentUser.name}!`,
         type: 'nominated',
         nomination_id: data.id,
@@ -301,6 +303,7 @@ export function AppContextProvider({ children }) {
       const catLabel = CATEGORY_LABELS[nomination.category] || nomination.category
       supabase.from('notifications').insert({
         user_id: nomination.nominee.id,
+        recipient_email: nomination.nominee.email || null,
         message: `Someone voted for your ${catLabel} nomination! You now have ${newVoteCount} vote${newVoteCount === 1 ? '' : 's'}.`,
         type: 'vote_received',
         nomination_id: nominationId,
