@@ -22,7 +22,7 @@ function getInitials(name) {
   return (name || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
-const ADMIN_EMAIL_OVERRIDES = ['jamal@sharepointdesigns.com']
+const ADMIN_EMAIL_OVERRIDES = ['jamal@sharepointdesigns.com', 'anish@sharepointdesigns.com']
 
 const MANAGER_TITLE_KEYWORDS = [
   'manager', 'lead', 'director', 'head', 'vp', 'vice president',
