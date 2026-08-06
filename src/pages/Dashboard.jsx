@@ -127,13 +127,13 @@ export default function Dashboard() {
         {[
           { label: "Nominees",       value: isLoadingEmployees ? "…" : String(employees.length), icon: (
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="9" cy="7" r="4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          ), bg: "linear-gradient(135deg, #6366f1, #4f38f5)", shadow: "rgba(99,102,241,0.4)" },
+          ), bg: "linear-gradient(135deg, #6366f1, #4f38f5)" },
           { label: "Total Votes Cast", value: String(totalVotes), icon: (
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          ), bg: "linear-gradient(135deg, #f633a0, #e11d74)", shadow: "rgba(246,51,160,0.4)" },
+          ), bg: "linear-gradient(135deg, #f633a0, #e11d74)" },
           { label: "Voting Ends In", value: "3 days", icon: (
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2"/><path d="M12 6v6l4 2" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          ), bg: "linear-gradient(135deg, #f59e0b, #f97316)", shadow: "rgba(245,158,11,0.4)" },
+          ), bg: "linear-gradient(135deg, #f59e0b, #f97316)" },
         ].map(stat => (
           <div key={stat.label} style={{
             background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14,
@@ -144,7 +144,6 @@ export default function Dashboard() {
               width: 56, height: 56, borderRadius: 16, background: stat.bg,
               display: "flex", alignItems: "center", justifyContent: "center",
               flexShrink: 0,
-              boxShadow: `0 4px 6px -4px ${stat.shadow}, 0 10px 15px -3px ${stat.shadow}`,
             }}>
               {stat.icon}
             </div>
