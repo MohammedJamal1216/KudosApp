@@ -14,8 +14,9 @@ const icons = {
   ),
   wellbeing: (
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 21c-3.5-2-6-5-6-8a6 6 0 0 1 6-6 6 6 0 0 1 6 6c0 3-2.5 6-6 8z"/>
-      <path d="M12 21V11M12 13l-3-2M12 13l3-2"/>
+      {/* Drawn to span y 4–20 so it centers on 12 like the other icons */}
+      <path d="M12 20c-4-2.3-7-5.5-7-9a7 7 0 0 1 14 0c0 3.5-3 6.7-7 9z"/>
+      <path d="M12 20V10.5M12 13l-3.5-2.5M12 13l3.5-2.5"/>
     </svg>
   ),
   celebration: (
@@ -103,6 +104,23 @@ function itemColors(isActive) {
   return { color: isActive ? '#4F38F6' : '#627490' }
 }
 
+// Icons must sit in a fixed flex box, not an inline span: an inline <svg>
+// aligns to the text baseline, which drops it by the descender gap and by a
+// different amount than its label. A fixed box also keeps labels on a common
+// left edge regardless of each glyph's drawn width.
+const ICON_BOX = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '19px',
+  height: '19px',
+  flexShrink: 0,
+}
+
+function iconBoxStyle(isActive, extra) {
+  return { ...ICON_BOX, ...itemColors(isActive), ...extra }
+}
+
 function NavGroup({ item, isOpen, onToggle, onClose }) {
   const { pathname } = useLocation()
   const ref = useRef(null)
@@ -141,7 +159,7 @@ function NavGroup({ item, isOpen, onToggle, onClose }) {
           boxShadow: highlighted ? ACTIVE_SHADOW : 'none',
         }}
       >
-        <span className="flex-shrink-0 mr-[6px]" style={itemColors(highlighted)}>
+        <span style={iconBoxStyle(highlighted, { marginRight: '7px' })}>
           {item.icon}
         </span>
         <span className="text-[13.5px] font-bold whitespace-nowrap" style={itemColors(highlighted)}>
@@ -186,7 +204,7 @@ function NavGroup({ item, isOpen, onToggle, onClose }) {
             >
               {({ isActive }) => (
                 <>
-                  <span className="flex-shrink-0" style={itemColors(isActive)}>{icon}</span>
+                  <span style={iconBoxStyle(isActive)}>{icon}</span>
                   <span className="flex flex-col">
                     <span className="text-[13.5px] font-bold leading-tight" style={{ color: isActive ? '#4F38F6' : '#1D2840' }}>
                       {label}
@@ -245,7 +263,7 @@ export default function TopNav() {
           >
             {({ isActive }) => (
               <>
-                <span className="flex-shrink-0 mr-[6px]" style={itemColors(isActive)}>
+                <span style={iconBoxStyle(isActive, { marginRight: '7px' })}>
                   {item.icon}
                 </span>
                 <span className="text-[13.5px] font-bold whitespace-nowrap" style={itemColors(isActive)}>
