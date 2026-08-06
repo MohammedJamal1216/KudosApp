@@ -6,7 +6,12 @@
       "mcp__figma__view_node",
       "mcp__figma__read_comments",
       "Bash(npm run:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm test:*)",
+      "Bash(npx vercel:*)",
+      "Bash(npx supabase:*)",
+      "Bash(curl:*)",
+      "Bash(python -c ' *)"
     ]
   }
 }
