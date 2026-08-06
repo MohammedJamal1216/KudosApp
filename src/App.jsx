@@ -1,5 +1,6 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import PageNav from './components/PageNav'
 import Dashboard from './pages/Dashboard'
 import NominatePeer from './pages/NominatePeer'
 import Vote from './pages/Vote'
@@ -20,6 +21,7 @@ export default function App() {
             <div className="min-h-screen bg-[#F7F8FC] overflow-x-hidden">
               <Navbar />
               <main className="max-w-[1260px] mx-auto px-[90px] py-8">
+                <PageNav />
                 <Routes>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/dashboard" element={<Dashboard />} />
