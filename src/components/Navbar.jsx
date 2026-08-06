@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useMsal } from '@azure/msal-react'
 import { useAppContext } from '../context/AppContext'
 import AdminConfigPanel from './AdminConfigPanel'
 import NotificationBell from './NotificationBell'
+import TopNav from './TopNav'
 import { GOOGLE_USER_KEY } from '../auth/AuthWrapper'
 
 export default function Navbar() {
@@ -44,8 +46,8 @@ export default function Navbar() {
         borderBottom: '1px solid rgba(255,255,255,0.4)',
       }}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-3 flex-shrink-0">
+      {/* Logo — also the way back to the dashboard */}
+      <Link to="/dashboard" className="flex items-center gap-3 flex-shrink-0">
         {/* Icon box */}
         <div
           className="w-10 h-10 flex items-center justify-center flex-shrink-0"
@@ -71,7 +73,10 @@ export default function Navbar() {
         >
           KudosApp
         </span>
-      </div>
+      </Link>
+
+      {/* Nav Links */}
+      <TopNav />
 
       {/* Gear + Profile */}
       <div className="flex items-center gap-3 flex-shrink-0">
