@@ -5,9 +5,10 @@ const allNavItems = [
   {
     to: '/dashboard',
     label: 'Dashboard',
+    color: '#4F38F6',
     roles: ['admin', 'manager', 'employee'],
     icon: (
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7" rx="1"/>
         <rect x="14" y="3" width="7" height="7" rx="1"/>
         <rect x="3" y="14" width="7" height="7" rx="1"/>
@@ -18,9 +19,10 @@ const allNavItems = [
   {
     to: '/nominate',
     label: 'Nominate',
+    color: '#FF8902',
     roles: ['admin', 'manager'],
     icon: (
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
         <circle cx="9" cy="7" r="4"/>
         <line x1="19" y1="8" x2="19" y2="14"/>
@@ -31,9 +33,10 @@ const allNavItems = [
   {
     to: '/vote',
     label: 'Vote',
+    color: '#F5339A',
     roles: ['admin', 'employee'],
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/>
         <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
       </svg>
@@ -42,9 +45,10 @@ const allNavItems = [
   {
     to: '/leaderboard',
     label: 'Leaderboard',
+    color: '#AD47FF',
     roles: ['admin', 'manager', 'employee'],
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
         <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
         <path d="M4 22h16"/>
@@ -61,56 +65,64 @@ export default function PageNav() {
   const navItems = allNavItems.filter(item => item.roles.includes(currentUser?.accessRole ?? 'employee'))
 
   return (
-    <div className="flex justify-center mb-8">
-      <div
-        className="flex items-center"
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          border: '1px solid #E2EBF0',
-          padding: '5.7px 1px',
-          gap: '7px',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
-        }}
-      >
-        {navItems.map(({ to, label, icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex items-center gap-0 rounded-[14px] transition-all duration-200 ${isActive ? 'bg-white' : ''}`
-            }
-            style={({ isActive }) => ({
-              paddingTop: 0,
-              paddingBottom: 0,
-              height: '37.8px',
-              paddingLeft: '20px',
-              paddingRight: '16px',
-              boxShadow: isActive
-                ? '0 2px 4px -2px rgba(224,231,255,1), 0 4px 6px -1px rgba(224,231,255,1)'
-                : 'none',
-              backgroundColor: isActive ? '#F3F1FF' : 'transparent',
-            })}
-          >
-            {({ isActive }) => (
-              <>
-                <span
-                  className="flex-shrink-0 mr-[7px]"
-                  style={{ color: isActive ? '#4F38F6' : '#627490' }}
-                >
-                  {icon}
-                </span>
-                <span
-                  className="text-[14px] font-bold"
-                  style={{ color: isActive ? '#4F38F6' : '#627490' }}
-                >
-                  {label}
-                </span>
-              </>
-            )}
-          </NavLink>
-        ))}
-      </div>
+    <div
+      className="grid mb-8"
+      style={{
+        gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))`,
+        gap: '18px',
+      }}
+    >
+      {navItems.map(({ to, label, icon, color }) => (
+        <NavLink
+          key={to}
+          to={to}
+          className="relative block overflow-hidden group"
+          style={({ isActive }) => ({
+            height: '132px',
+            borderRadius: '20px',
+            backgroundColor: '#ffffff',
+            border: isActive ? `2px solid ${color}` : '1px solid #E2EBF0',
+            boxShadow: isActive
+              ? `0 10px 24px -8px ${color}59`
+              : '0 4px 16px rgba(0,0,0,0.04)',
+            transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+          })}
+        >
+          {({ isActive }) => (
+            <>
+              {/* Label */}
+              <span
+                className="absolute text-[16px] font-extrabold leading-tight"
+                style={{
+                  top: '18px',
+                  left: '20px',
+                  right: '20px',
+                  color: isActive ? color : '#0F1729',
+                }}
+              >
+                {label}
+              </span>
+
+              {/* Quarter-disc with icon */}
+              <div
+                className="absolute flex items-center justify-center text-white"
+                style={{
+                  right: 0,
+                  bottom: 0,
+                  width: '76px',
+                  height: '76px',
+                  backgroundColor: color,
+                  borderTopLeftRadius: '100%',
+                  paddingLeft: '16px',
+                  paddingTop: '16px',
+                }}
+              >
+                {icon}
+              </div>
+            </>
+          )}
+        </NavLink>
+      ))}
     </div>
   )
 }
