@@ -2,6 +2,16 @@ import { useMsal } from '@azure/msal-react'
 import { useGoogleLogin } from '@react-oauth/google'
 import { loginRequest } from './msalConfig'
 
+// Shape matches what the Google path stores; the email is in
+// ADMIN_EMAIL_OVERRIDES (AppContext) so this session resolves to admin.
+const DEV_ADMIN_USER = {
+  id: 'dev-admin',
+  name: 'Jamal Mohammed',
+  email: 'jamal@sharepointdesigns.com',
+  picture: null,
+  provider: 'google',
+}
+
 export default function LoginPage({ onGoogleLogin }) {
   const { instance } = useMsal()
 
@@ -120,6 +130,36 @@ export default function LoginPage({ onGoogleLogin }) {
           </svg>
           Sign in with Google
         </button>
+
+        {/* Dev-only bypass. import.meta.env.DEV is false in production builds,
+            so this block is dropped entirely and never ships to Vercel. */}
+        {import.meta.env.DEV && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 8px' }}>
+              <div style={{ flex: 1, height: 1, background: '#E2EBF0' }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b' }}>DEV ONLY</span>
+              <div style={{ flex: 1, height: 1, background: '#E2EBF0' }} />
+            </div>
+            <button
+              onClick={() => onGoogleLogin(DEV_ADMIN_USER)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                background: '#FFFBEB', color: '#92400E', border: '1.5px dashed #F59E0B',
+                borderRadius: 14, padding: '13px 24px', fontSize: 14, fontWeight: 700,
+                cursor: 'pointer', marginTop: 8,
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                <path d="M2 12h3M19 12h3M12 2v3M12 19v3"/>
+              </svg>
+              Continue as Admin (skip login)
+            </button>
+            <p style={{ fontSize: 11.5, fontWeight: 500, color: '#90a3b8', margin: '10px 0 0' }}>
+              Local development only — not available on the deployed site.
+            </p>
+          </>
+        )}
       </div>
     </div>
   )
